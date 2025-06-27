@@ -1,191 +1,179 @@
+import 'dart:math';
+import 'package:carnaticapp/events/SwaraChangeEvent.dart';
 import 'package:flutter/material.dart';
 import 'package:carnaticapp/grading.dart';
+import 'package:carnaticapp/widgets/swara_widget.dart';
 
-class SongRenderer extends StatelessWidget {
+class SongRenderer extends StatefulWidget {
   final CarnaticSong song;
+  final bool showInvisibleCursor; // Toggle for invisible cursor
 
-  const SongRenderer({Key? key, required this.song}) : super(key: key);
+  const SongRenderer({
+    Key? key,
+    required this.song,
+    this.showInvisibleCursor = true, // Default cursor visibility
+  }) : super(key: key);
 
   @override
+  _SongRendererState createState() => _SongRendererState();
+}
+
+class _SongRendererState extends State<SongRenderer> {
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          song.name,
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        Text(
-          "Ragam: ${song.raga}",
-          style: const TextStyle(fontSize: 18),
-        ),
-        Text(
-          "Talam: ${song.tala}",
-          style: const TextStyle(fontSize: 18),
-        ),
-        const SizedBox(height: 16),
-        ...song.blocks.map((block) => _renderBlock(block, song.lines)),
-      ],
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final baseFontSize = screenWidth * 0.05;
+
+    return SingleChildScrollView( // Add vertical scrolling
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.song.name,
+            style: TextStyle(fontSize: baseFontSize, fontWeight: FontWeight.bold),
+          ),
+          Text(
+            "Ragam: ${widget.song.raga}",
+            style: TextStyle(fontSize: baseFontSize * 0.75),
+          ),
+          Text(
+            "Talam: ${widget.song.tala}",
+            style: TextStyle(fontSize: baseFontSize * 0.75),
+          ),
+          SizedBox(height: screenHeight * 0.02),
+          ...widget.song.blocks.map((block) =>
+              _renderBlock(context, block, widget.song.lines, baseFontSize, screenHeight)),
+        ],
+      ),
     );
   }
 
-  Widget _renderBlock(SongBlock block, List<SongLine> lines) {
+  Widget _renderBlock(
+    BuildContext context,
+    SongBlock block,
+    List<SongLine> lines,
+    double baseFontSize,
+    double screenHeight,
+  ) {
+    final isPortrait = MediaQuery.of(context).orientation == Orientation.portrait;
+    final lineSpacing = isPortrait ? screenHeight * 0.04 : screenHeight * 0.12;
+
+    final blockLines = block.renderOrder.map((i) => lines[i]).toList();
+
+    final expandedLines = blockLines.map((line) {
+      final cells = <Widget>[];
+      int sahityaCounter = 0;
+      for (var swara in line.swara) {
+        final widgets = _renderSwara(
+          swara,
+          sahityaCounter,
+          line,
+          baseFontSize,
+          screenHeight,
+        );
+        cells.addAll(widgets);
+        if (!swara.isBreak) sahityaCounter++;
+      }
+      return cells;
+    }).toList();
+
+    final maxCols = expandedLines
+        .map((cells) => cells.length)
+        .fold<int>(0, (prev, len) => max(prev, len));
+
+    final rowHeight = lineSpacing * 2.1;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (block.name != null)
           Text(
             block.name!,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-        const SizedBox(height: 8),
-        ...block.renderOrder.map((lineIndex) => _renderLine(lines[lineIndex])),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Widget _renderLine(SongLine line) {
-    List<Widget> swaraWidgets = [];
-    for (SwaraNote swara in line.swara) {
-      if (swara.isBreak) {
-        swaraWidgets.add(const SizedBox(width: double.infinity)); // Line break
-      } else {
-        swaraWidgets.addAll(_renderSwara(swara));
-      }
-    }
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: swaraWidgets
-          ),
-        ),
-        Expanded(
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            children: line.sahitya.map((sahitya) {
-              return Text(
-                sahitya,
-                style: const TextStyle(fontSize: 16),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  List<Widget> _beatExtensions(SwaraNote swara) {
-      List<Widget> widgets = [];
-      //One thing is that the lines above will compensate for quarter and eight
-      //complete rewrite to r
-      double numBeatsD = swara.beats;
-      double divFactor = 1.0;
-      if (numBeatsD == 0) return [];
-      int numBeats;
-      if (numBeatsD-numBeatsD.toInt() == 0.25) {
-        numBeats = (numBeatsD * 4).toInt();
-        divFactor = 4.0;
-      } else if (numBeatsD-numBeatsD.toInt() == 0.5) {
-        numBeats = (numBeatsD * 2).toInt();
-        divFactor = 2.0;
-      } else {
-        numBeats = numBeatsD.toInt();
-      }
-
-      if (numBeats <= 1) return [];
-      int numSemicolons = numBeats ~/ 2;
-      int numCommas = numBeats % 2;
-
-      for (int i = 0; i < numSemicolons; i++) {
-        widgets.add(_renderSwara(SwaraNote(";", octave: 0, beats: swara.beats, isBreak: false, isSlide: swara.isSlide, isShake: swara.isShake, isExtension: true))[0]);
-      }
-      for (int i = 0; i < numCommas; i++) {
-        widgets.add(_renderSwara(SwaraNote(",", octave: 0, beats: swara.beats, isBreak: false, isSlide: swara.isSlide, isShake: swara.isShake, isExtension: true))[0]);
-      }
-      return widgets;
-  }
-
-  List<Widget> _renderSwara(SwaraNote swara) {
-    List<Widget> widgets = [];
-    // we want to be able to render the dot above or below the swara based on the octave
-    //We have to add semicolons for the swara note when beat is more than 1, this will be grouped with semicolons being two beats and commas being one beat
-    Widget mainReturn = Stack(
-          alignment: Alignment.center,
-          clipBehavior: Clip.none,
-          children: [
-            Text(
-              // these extensions should probably be displayed as if they are seperate notes in their own
-              // right now they are just displayed as a continuation of the note
-              swara.note,
-
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: swara.isSlide ? Colors.blue : Colors.black,
-              ),
+            style: TextStyle(
+              fontSize: baseFontSize * 0.9,
+              fontWeight: FontWeight.bold,
             ),
-            if (swara.octave > 0)
-              Positioned(
-                top: -1,
-                child: const Icon(Icons.square, size: 4, color: Colors.black),
+          ),
+        SizedBox(height: lineSpacing),
+        Table(
+          columnWidths: {
+            for (int c = 0; c < maxCols; c++) c: const FlexColumnWidth(1),
+          },
+          children: [
+            for (var cells in expandedLines)
+              TableRow(
+                children: [
+                  for (var w in cells)
+                    Stack(
+                      children: [
+                        SizedBox(
+                          height: rowHeight,
+                          child: Center(child: w),
+                        ),
+                      ],
+                    ),
+                  for (int i = cells.length; i < maxCols; i++)
+                    SizedBox(height: rowHeight),
+                ],
               ),
-            if (swara.octave < 0)
-              Positioned(
-                bottom: -1,
-                child: const Icon(Icons.square, size: 4, color: Colors.black),
-              ),
-              //also gotta draw line above for notes that end in .5 and double line for ending in .25 swara numbeats
-              if (swara.beats-swara.beats.toInt() == 0.5) ...[
-                Positioned(
-                  top: -5,
-                  //line that spans full letterbox and spacing, not icon just line
-                  child: Container(
-                    width: 20,
-                    height: 2,
-                    color: Colors.black,
-                  )
-                  
-                ),
-              ] else if (swara.beats-swara.beats.toInt() == 0.25) ...[
-                Positioned(
-                  top: -5,
-                  child: Container(
-                    width: 20,
-                    height: 2,
-                    color: Colors.black,
-                  )
-                ),
-                Positioned(
-                    top: -9,
-                    child: Container(
-                    width: 20,
-                    height: 2,
-                    color: Colors.black,
-                  )
-                ),
-              ]
           ],
+        ),
+        SizedBox(height: lineSpacing * 0.5),
+      ],
+    );
+  }
+
+  List<Widget> _beatExtensions(
+    SwaraNote swara,
+    int sahityaIndex,
+    SongLine? line,
+    double baseFontSize,
+    double screenHeight,
+  ) {
+    final widgets = <Widget>[];
+
+
+    for (int i = 0; i < swara.extensions.length; i++) {
+      widgets.addAll(_renderSwara(
+        SwaraNote(swara.extensions[i].symbol, octave: 0, beats: swara.beats, isBreak: false, isSlide: swara.isSlide, isShake: swara.isShake, isExtension: true, swaraParentNote: swara),
+        sahityaIndex + i,
+        line,
+        baseFontSize,
+        screenHeight,
+      ));
+    }
+    return widgets;
+  }
+
+  List<Widget> _renderSwara(
+    SwaraNote swara,
+    int sahityaIndex,
+    SongLine? line,
+    double baseFontSize,
+    double screenHeight,
+
+  ) {
+    final widgets = <Widget>[];
+
+    final mainWidget = 
+    SwaraWidget(
+      swaraNote: swara,
+      lineText: line?.sahitya != null && sahityaIndex < line!.sahitya.length && !swara.isBreak
+          ? line.sahitya[sahityaIndex]
+          : null,
+      baseFontSize: baseFontSize,
+      screenHeight: screenHeight,
     );
 
-    widgets.add(mainReturn);
 
+    widgets.add(mainWidget);
+
+    // if this is _not_ already an extension marker, add any beat-extensions too
     if (!swara.isExtension) {
-      // if the swara is an extension, we add the beat extensions
-      // these are the semicolons and commas that represent the beats
-      _beatExtensions(swara).forEach((widget) {
-        widgets.add(widget);
-      });
-    }
+      widgets.addAll(_beatExtensions(swara, sahityaIndex, line, baseFontSize, screenHeight));
+    } 
 
     return widgets;
-
-
-
   }
 }

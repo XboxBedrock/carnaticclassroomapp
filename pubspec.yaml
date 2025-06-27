@@ -34,6 +34,8 @@ dependencies:
   fftea: ^1.5.0+1
   pitch_detector_dart: ^0.0.7
   pitchupdart: ^0.0.6
+  provider: ^6.1.5
+  event_bus: ^2.0.1
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

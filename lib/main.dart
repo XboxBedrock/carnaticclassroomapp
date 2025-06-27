@@ -1,9 +1,12 @@
 import 'dart:isolate';
 import 'dart:typed_data';
 
+import 'package:carnaticapp/events/EventBus.dart';
 import 'package:carnaticapp/grading.dart';
+import 'package:carnaticapp/events/SwaraChangeEvent.dart';
 import 'package:carnaticapp/song.dart';
 import 'package:carnaticapp/util.dart';
+import 'package:event_bus/event_bus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_audio_capture/flutter_audio_capture.dart';
@@ -129,16 +132,21 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void _debugPrint() async {
+  void _debugPrint()  {
     //print(currentPlayingSession);
-    List<GradeNote> song = [GradeNote(relatives[0][0], 0, 1), GradeNote(relatives[1][0], 0, 1)];
-    GradeSong gradeSong = GradeSong(varavina, 60, activeShruti, tonicOctave);
+    //List<GradeNote> song = [GradeNote(relatives[0][0], 0, 1), GradeNote(relatives[1][0], 0, 1)];
+    //GradeSong gradeSong = GradeSong(varavina, 60, activeShruti, tonicOctave);
 
-    var gradeable = await currentPlayingSession?.gradeify();
+    //var gradeable = await currentPlayingSession?.gradeify();
 
-    if (gradeable != null) {
-      print(await gradeSong.gradeSongNoteTempoAlignment(gradeable, pitchUp));
-    }
+    //if (gradeable != null) {
+    //  print(await gradeSong.gradeSongNoteTempoAlignment(gradeable, pitchUp));
+    //}
+
+    eventBus.fire(SwaraChangeEvent(true, true, 0, varavina.lines[0].swara[0]));
+        
+
+    print("dpatch");
   }
 
   void onError(Object e) {

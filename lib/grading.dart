@@ -1,6 +1,8 @@
+import 'package:carnaticapp/providers/SwaraChangeNotification.dart';
 import 'package:carnaticapp/util.dart';
 import 'package:pitchupdart/pitch_handler.dart';
 import 'package:pitchupdart/pitch_result.dart';
+import 'package:provider/provider.dart';
 
 class PlayedSong {
   List<(double, double)> _freqAndTimes = [];
@@ -19,6 +21,8 @@ class GradeNote {
   double _numBeats;
 
   GradeNote(this._targetNote, this._targetOctave, this._numBeats);
+
+  
 
   int halfStepsOff(PitchResult res, int activeShruti, int tonicOctave) {
     int octave = getOctave(truncDouble(res.expectedFrequency, 2));
@@ -147,6 +151,8 @@ class SwaraNote {
   final bool isExtension; // Indicates if this note is an extension
   final SwaraNote? swaraParentNote; //Parent for extensions
 
+  List<SwaraExtension> extensions = []; // List of extensions for this note
+
   SwaraNote(
     this.note, {
     required this.octave,
@@ -156,6 +162,52 @@ class SwaraNote {
     this.isShake = false,
     this.isExtension = false,
     this.swaraParentNote,
+  }) {
+
+    if (isExtension || isBreak) {
+      return; // No extensions for break or extension notes
+    }
+    
+    double numBeatsD = beats;
+
+    int numBeats;
+    int divFactor;
+    if ((numBeatsD - numBeatsD.toInt()).abs() == 0.25) {
+      numBeats = (numBeatsD * 4).toInt();
+      divFactor = 4;
+    } else if ((numBeatsD - numBeatsD.toInt()).abs() == 0.5) {
+      numBeats = (numBeatsD * 2).toInt();
+      divFactor = 2;
+    } else {
+      numBeats = numBeatsD.toInt();
+      divFactor = 1;
+    }
+
+    numBeats--;
+
+    final numSemicolons = numBeats ~/ 2;
+    final numCommas = numBeats % 2;
+
+    for (int i = 0; i < numSemicolons; i++) {
+      extensions.add(
+        SwaraExtension(symbol: ";", beats: 2.0/divFactor),
+      );
+    }
+    for (int i = 0; i < numCommas; i++) {
+      extensions.add(
+        SwaraExtension(symbol: ",", beats: 1.0/divFactor),
+      );
+    }
+  }
+}
+
+class SwaraExtension {
+  final String symbol;
+  final double beats;
+
+  SwaraExtension({
+    required this.symbol,
+    required this.beats,
   });
 }
 

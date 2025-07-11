@@ -74,9 +74,10 @@ class CarnaticNote {
     return "$note $subscript";
   }
 
+
   @override
   bool operator ==(Object other) {
-    // TODO: implement ==
+    
     if (identical(this, other)) return true; 
     if (other is! CarnaticNote) return false;
     return (note == other.note) && (subscript == other.subscript);

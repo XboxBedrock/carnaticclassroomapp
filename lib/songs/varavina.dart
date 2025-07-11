@@ -1,4 +1,19 @@
 import 'package:carnaticapp/grading.dart';
+import 'package:carnaticapp/raga.dart';
+import 'package:carnaticapp/util.dart';
+
+Raga mohanam = Raga(
+  "Mohanam",
+  "A pentatonic raga, often associated with joy and devotion.",
+  [
+    CarnaticNote("S", 0, "Shadjam", null),
+    CarnaticNote("R", 2, "Chatusruti Rishabham", 2),
+    CarnaticNote("G", 3, "Antara Gandharam", 3),
+    CarnaticNote("P", 7, "Panchamam", null),
+    CarnaticNote("D", 9, "Chatusruti Dhaivatam", 2),
+    CarnaticNote("N", 10, "Kaisiki Nishadam", 2)
+  ],
+);
 
 final CarnaticSong varavina = CarnaticSong(
   name: "Varaveena",

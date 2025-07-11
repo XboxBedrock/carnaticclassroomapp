@@ -49,6 +49,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
+  dart_melty_soundfont:
+    dependency: "direct main"
+    description:
+      name: dart_melty_soundfont
+      sha256: cf395deb49b028f8ca3cda2764f0d3af2f8a683a791d96e405d2a066f05954fd
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.16"
   event_bus:
     dependency: "direct main"
     description:
@@ -94,6 +102,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.0.0"
+  flutter_pcm_sound:
+    dependency: "direct main"
+    description:
+      name: flutter_pcm_sound
+      sha256: c8af09d7c39d63b0c2c20a406da5d0cb92690b4783b24fdcafecdc681bb65005
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.7"
   flutter_test:
     dependency: "direct dev"
     description: flutter

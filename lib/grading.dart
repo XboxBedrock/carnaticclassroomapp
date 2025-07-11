@@ -1,4 +1,4 @@
-import 'package:carnaticapp/providers/SwaraChangeNotification.dart';
+import 'package:carnaticapp/events/SwaraChangeEvent.dart';
 import 'package:carnaticapp/util.dart';
 import 'package:pitchupdart/pitch_handler.dart';
 import 'package:pitchupdart/pitch_result.dart';
@@ -49,16 +49,32 @@ class GradeNote {
   }
 }
 
-class CarnaticSongIterator {
+class CarnaticSongIterator implements Iterator<SwaraNote> {
   final CarnaticSong _song;
   int _currentBlockIndex = 0;
   int _currentLineIndex = 0;
   int _currentSwaraIndex = 0;
 
-  CarnaticSongIterator(this._song);
+  late SwaraNote _current;
 
-  SwaraNote? next() {
-    if (_currentBlockIndex >= _song.playOrder.length) return null;
+  CarnaticSongIterator(this._song) {
+    int blockIndex = _song.playOrder[_currentBlockIndex];
+    SongBlock block = _song.blocks[blockIndex];
+    int lineIndex = block.playOrder[_currentLineIndex];
+    SongLine line = _song.lines[lineIndex];
+    SwaraNote swara = line.swara[_currentSwaraIndex];
+
+    _current = swara;
+  }
+  
+  @override
+
+  SwaraNote get current => _current;
+  
+  @override
+  bool moveNext() {
+
+    if (_currentBlockIndex >= _song.playOrder.length) return false;
 
     int blockIndex = _song.playOrder[_currentBlockIndex];
     SongBlock block = _song.blocks[blockIndex];
@@ -67,7 +83,7 @@ class CarnaticSongIterator {
       _currentLineIndex = 0;
       _currentSwaraIndex = 0;
       _currentBlockIndex++;
-      return next();
+      return moveNext();
     }
 
     int lineIndex = block.playOrder[_currentLineIndex];
@@ -76,12 +92,13 @@ class CarnaticSongIterator {
     if (_currentSwaraIndex >= line.swara.length) {
       _currentSwaraIndex = 0;
       _currentLineIndex++;
-      return next();
+      return moveNext();
     }
 
     SwaraNote swara = line.swara[_currentSwaraIndex];
     _currentSwaraIndex++;
-    return swara;
+    _current = swara;
+    return true;
   }
 }
 
@@ -100,10 +117,11 @@ class GradeSong {
     int i = 0;
     double duration = 0;
 
-    SwaraNote? currentSwara = iterator.next();
+    SwaraNote? currentSwara = iterator.current;
     while (currentSwara != null) {
       if (currentSwara.isBreak) {
-        currentSwara = iterator.next();
+        iterator.moveNext();
+        currentSwara = iterator.current;
         continue; // Skip break lines
       }
 
@@ -133,7 +151,8 @@ class GradeSong {
       }
 
       duration = newDuration;
-      currentSwara = iterator.next();
+      iterator.moveNext();
+      currentSwara = iterator.current;
     }
 
     return timeAndCentsOff;
@@ -150,6 +169,7 @@ class SwaraNote {
   final bool isShake; // Indicates if this note is a shake
   final bool isExtension; // Indicates if this note is an extension
   final SwaraNote? swaraParentNote; //Parent for extensions
+  late double noExtensionBeats; // Beats without extensions
 
   List<SwaraExtension> extensions = []; // List of extensions for this note
 
@@ -167,7 +187,7 @@ class SwaraNote {
     if (isExtension || isBreak) {
       return; // No extensions for break or extension notes
     }
-    
+
     double numBeatsD = beats;
 
     int numBeats;
@@ -197,6 +217,12 @@ class SwaraNote {
       extensions.add(
         SwaraExtension(symbol: ",", beats: 1.0/divFactor),
       );
+    }
+
+    if (numBeats > 0) {
+      noExtensionBeats = numBeatsD - (numSemicolons * 2.0/divFactor) - (numCommas * 1.0/divFactor);
+    } else {
+      noExtensionBeats = numBeatsD;
     }
   }
 }

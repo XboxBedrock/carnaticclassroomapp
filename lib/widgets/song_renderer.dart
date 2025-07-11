@@ -71,9 +71,11 @@ class _SongRendererState extends State<SongRenderer> {
           line,
           baseFontSize,
           screenHeight,
+          -1
         );
         cells.addAll(widgets);
-        if (!swara.isBreak) sahityaCounter++;
+        sahityaCounter = cells.length;
+        if (swara.isBreak) sahityaCounter--;
       }
       return cells;
     }).toList();
@@ -137,10 +139,11 @@ class _SongRendererState extends State<SongRenderer> {
     for (int i = 0; i < swara.extensions.length; i++) {
       widgets.addAll(_renderSwara(
         SwaraNote(swara.extensions[i].symbol, octave: 0, beats: swara.beats, isBreak: false, isSlide: swara.isSlide, isShake: swara.isShake, isExtension: true, swaraParentNote: swara),
-        sahityaIndex + i,
+        sahityaIndex + i + 1,
         line,
         baseFontSize,
         screenHeight,
+        i // Pass the extension index
       ));
     }
     return widgets;
@@ -152,7 +155,7 @@ class _SongRendererState extends State<SongRenderer> {
     SongLine? line,
     double baseFontSize,
     double screenHeight,
-
+    int extensionIndex // Default to -1 if not provided
   ) {
     final widgets = <Widget>[];
 
@@ -164,6 +167,8 @@ class _SongRendererState extends State<SongRenderer> {
           : null,
       baseFontSize: baseFontSize,
       screenHeight: screenHeight,
+      parentSwaraNote: swara.swaraParentNote,
+      extensionIndex: extensionIndex // Only set
     );
 
 

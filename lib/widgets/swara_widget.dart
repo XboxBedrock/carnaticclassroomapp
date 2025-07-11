@@ -5,6 +5,8 @@ import 'package:carnaticapp/grading.dart';
 
 class SwaraWidget extends StatefulWidget {
   final SwaraNote swaraNote;
+  final SwaraNote? parentSwaraNote;
+  final int? extensionIndex;
   final String? lineText;
   final double baseFontSize;
   final double screenHeight;
@@ -15,6 +17,8 @@ class SwaraWidget extends StatefulWidget {
     required this.baseFontSize,
     this.lineText,
     required this.screenHeight,
+    this.parentSwaraNote,
+    this.extensionIndex = -1, // Default to -1 if not provided	
   }) : super(key: key);
 
   @override
@@ -26,7 +30,16 @@ class _SwaraWidgetState extends State<SwaraWidget> {
   bool _highlighted = false;
 
   void processNotification(SwaraChangeEvent notification) {
-    if (notification.swaraNote == widget.swaraNote) {
+    if (notification.extensionIndex >= 0) {
+      if (notification.swaraNote == widget.parentSwaraNote && 
+          notification.extensionIndex == widget.extensionIndex) {
+        setState(() {
+          _cursorVisible = notification.cursorVisible;
+          _highlighted = notification.highlighted;
+        });
+      }
+    }
+    else if (notification.swaraNote == widget.swaraNote) {
       setState(() {
         _cursorVisible = notification.cursorVisible;
         _highlighted = notification.highlighted;
